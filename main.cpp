@@ -77,7 +77,7 @@ int main() {
     */
     vector<Object> objects;
     Object object{ .speed = 10, .direction = 0, .mass = 10, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(10, 3))};
-    object.d.setPosition(object.s.getPosition().x, object.s.getPosition().y);
+    object.d.setPosition(object.s.getPosition().x + 10, object.s.getPosition().y + 10);
 
     ContextSettings settings(0, 0, 16, 4, 6, ContextSettings::Attribute::Default, true);
     RenderWindow window(VideoMode(width, heigh), "Gravity model", sf::Style::Default, settings);
@@ -206,9 +206,12 @@ void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& 
         break;
     case MASS:
         object.mass += data.delta;
-        object.s.setRadius(object.mass);
-        object.s.setPosition(Vector2f(data.x - object.mass, data.y - object.mass));
-        object.d.setPosition(object.s.getPosition().x + object.s.getRadius(), object.s.getPosition().y + object.s.getRadius());
+        float r = object.mass;
+        i32 x = data.x;
+        i32 y = data.y;
+        object.s.setRadius(r);
+        object.s.setPosition(Vector2f(x - r, y - r));
+        object.d.setPosition(x, y);
         break;
     }
 }
@@ -216,8 +219,10 @@ void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& 
 
 void process_mouse_move(Event::MouseMoveEvent& data, Object& object) {
     float r = object.s.getRadius();
-    object.s.setPosition(Vector2f(data.x - r, data.y - r));
-    object.d.setPosition(object.s.getPosition().x + object.s.getRadius(), object.s.getPosition().y + object.s.getRadius());
+    i32 x = data.x;
+    i32 y = data.y;
+    object.s.setPosition(Vector2f(x - r, y - r));
+    object.d.setPosition(x, y);
 }
 
 
