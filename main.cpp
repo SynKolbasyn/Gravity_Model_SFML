@@ -17,7 +17,6 @@ using sf::Clock;
 using sf::Event;
 using sf::Color;
 using sf::Keyboard;
-using sf::Vector2i;
 using sf::Vector2f;
 using sf::VideoMode;
 using sf::CircleShape;
@@ -43,11 +42,16 @@ enum Mode {
 
 
 struct Object {
-    double speed;
-    double direction;
-    double mass;
+    float speed_x;
+    float speed_y;
+    float direction;
+    float mass;
     CircleShape s;
     RectangleShape d;
+
+    float speed() {
+        return sqrt(pow(speed_x, 2) + pow(speed_y, 2));
+    }
 };
 
 
@@ -68,15 +72,11 @@ int main() {
     const u16 width = 1280;
     const u16 heigh = 720;
     const u16 FPS = 144;
-    const double delay = (double)1000000 / (double)FPS;
+    const float delay = (float)1000000 / (float)FPS;
     Mode mode = DIRECTION;
-    /*
-    double speed = 0;
-    double direction = 0;
-    double mass = 0;
-    */
+
     vector<Object> objects;
-    Object object{ .speed = 10, .direction = 0, .mass = 10, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(10, 3))};
+    Object object{ .speed_x = 10, .speed_y = 0, .direction = 0, .mass = 10, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(10, 3))};
     object.d.setPosition(object.s.getPosition().x + 10, object.s.getPosition().y + 10);
 
     ContextSettings settings(0, 0, 16, 4, 6, ContextSettings::Attribute::Default, true);
@@ -118,7 +118,7 @@ int main() {
         fps_text.setString(
             "FPS: " + to_string(1000000 / time.asMicroseconds()) +
             "\nMODE: " + get_mode(mode) +
-            "\nSPEED: " + to_string(object.speed) +
+            "\nSPEED: " + to_string(object.speed()) +
             "\nDIRECTION: " + to_string(object.direction) +
             "\nMASS: " + to_string(object.mass)
         );
@@ -155,11 +155,11 @@ int main() {
 
 void process_movement(vector<Object>& objects) {
     /*
-    double r2 = pow(objects[0].s.getPosition().x - objects[1].s.getPosition().x, 2) + pow(objects[0].s.getPosition().y - objects[1].s.getPosition().y, 2);
-    double r = sqrt(r2);
+    float r2 = pow(objects[0].s.getPosition().x - objects[1].s.getPosition().x, 2) + pow(objects[0].s.getPosition().y - objects[1].s.getPosition().y, 2);
+    float r = sqrt(r2);
     
-    double cos = (objects[0].s.getPosition().x - objects[1].s.getPosition().x) / r;
-    double sin = (objects[0].s.getPosition().y - objects[1].s.getPosition().y) / r;
+    float cos = (objects[0].s.getPosition().x - objects[1].s.getPosition().x) / r;
+    float sin = (objects[0].s.getPosition().y - objects[1].s.getPosition().y) / r;
     
     objects[0].vx += objects[1].m * -cos / r2 / 2;
     objects[1].vx += objects[0].m * cos / r2 / 2;
@@ -197,8 +197,9 @@ bool process_keys(Event::KeyEvent& key, vector<Object>& objects, Mode& mode) {
 void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& object) {
     switch (mode) {
     case SPEED:
-        object.speed += data.delta;
-        object.d.setSize(Vector2f(object.speed, object.d.getSize().y));
+        object.speed_x += data.delta * cos(object.direction);
+        object.speed_y += data.delta * sin(object.direction);
+        object.d.setSize(Vector2f(object.speed(), object.d.getSize().y));
         break;
     case DIRECTION:
         object.direction += data.delta;
