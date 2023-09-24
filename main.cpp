@@ -34,6 +34,9 @@ typedef long int i64;
 typedef unsigned long int u64;
 
 
+const float PI = 3.14159265358979323846;
+
+
 enum Mode {
     SPEED,
     DIRECTION,
@@ -51,6 +54,10 @@ struct Object {
 
     float speed() {
         return sqrt(pow(speed_x, 2) + pow(speed_y, 2));
+    }
+
+    float get_direction() {
+        return atan2(speed_y, speed_x) * 180 / PI;
     }
 };
 
@@ -76,7 +83,7 @@ int main() {
     Mode mode = DIRECTION;
 
     vector<Object> objects;
-    Object object{ .speed_x = 10, .speed_y = 0, .direction = 0, .mass = 10, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(10, 3))};
+    Object object{ .speed_x = 1.1, .speed_y = 0, .direction = 0, .mass = 100, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(25, 3))};
     object.d.setPosition(object.s.getPosition().x + 10, object.s.getPosition().y + 10);
 
     ContextSettings settings(0, 0, 16, 4, 6, ContextSettings::Attribute::Default, true);
@@ -154,22 +161,31 @@ int main() {
 
 
 void process_movement(vector<Object>& objects) {
-    /*
-    float r2 = pow(objects[0].s.getPosition().x - objects[1].s.getPosition().x, 2) + pow(objects[0].s.getPosition().y - objects[1].s.getPosition().y, 2);
-    float r = sqrt(r2);
-    
-    float cos = (objects[0].s.getPosition().x - objects[1].s.getPosition().x) / r;
-    float sin = (objects[0].s.getPosition().y - objects[1].s.getPosition().y) / r;
-    
-    objects[0].vx += objects[1].m * -cos / r2 / 2;
-    objects[1].vx += objects[0].m * cos / r2 / 2;
+    u64 size = objects.size();
 
-    objects[0].vy += objects[1].m * -sin / r2 / 2;
-    objects[1].vy += objects[0].m * sin / r2 / 2;
+    for (u64 i = 0; i + 1 < size; ++i) {
+        for (u64 j = i + 1; j < size; ++j) {
+            float r2 = pow(objects[i].s.getPosition().x - objects[j].s.getPosition().x, 2) + pow(objects[i].s.getPosition().y - objects[j].s.getPosition().y, 2);
+            float r = sqrt(r2);
 
-    objects[0].s.move(Vector2f(objects[0].vx, objects[0].vy));
-    objects[1].s.move(Vector2f(objects[1].vx, objects[1].vy));
-    */
+            float cos = (objects[i].s.getPosition().x - objects[j].s.getPosition().x) / r;
+            float sin = (objects[i].s.getPosition().y - objects[j].s.getPosition().y) / r;
+
+            objects[i].speed_x += objects[j].mass * -cos / r2 / 2;
+            objects[j].speed_x += objects[i].mass * cos / r2 / 2;
+
+            objects[i].speed_y += objects[j].mass * -sin / r2 / 2;
+            objects[j].speed_y += objects[i].mass * sin / r2 / 2;
+        }
+    }
+
+    for (Object& object : objects) {
+        object.direction = object.get_direction();
+        Vector2f speed(object.speed_x, object.speed_y);
+        object.s.move(speed);
+        object.d.move(speed);
+        object.d.setRotation(object.direction);
+    }
 }
 
 
@@ -197,22 +213,31 @@ bool process_keys(Event::KeyEvent& key, vector<Object>& objects, Mode& mode) {
 void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& object) {
     switch (mode) {
     case SPEED:
-        object.speed_x += data.delta * cos(object.direction);
-        object.speed_y += data.delta * sin(object.direction);
-        object.d.setSize(Vector2f(object.speed(), object.d.getSize().y));
+        float radians;
+        radians = object.direction * PI / 180;
+        object.speed_x += data.delta / 4 * cos(radians);
+        object.speed_y += data.delta / 4 * sin(radians);
+        object.direction = object.get_direction();
+        object.d.setSize(Vector2f(object.s.getRadius() + object.speed() * 20, object.d.getSize().y));
         break;
     case DIRECTION:
-        object.direction += data.delta;
+        object.direction += data.delta * 5;
         object.d.setRotation(object.direction);
+        float speed;
+        speed = object.speed();
+        radians = object.direction * PI / 180;
+        object.speed_x = speed * cos(radians);
+        object.speed_y = speed * sin(radians);
         break;
     case MASS:
-        object.mass += data.delta;
-        float r = object.mass;
+        object.mass += data.delta * 10;
+        float r = object.mass / 20;
         i32 x = data.x;
         i32 y = data.y;
         object.s.setRadius(r);
         object.s.setPosition(Vector2f(x - r, y - r));
         object.d.setPosition(x, y);
+        object.d.setSize(Vector2f(object.s.getRadius() + object.speed() * 20, object.d.getSize().y));
         break;
     }
 }
