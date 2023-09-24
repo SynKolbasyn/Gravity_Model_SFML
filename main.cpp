@@ -68,11 +68,11 @@ bool process_keys(Event::KeyEvent& key, vector<Object>& objects, Mode& mode);
 
 void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& object);
 
-void process_mouse_move(Event::MouseMoveEvent& data, Object& object);
+inline void process_mouse_move(Event::MouseMoveEvent& data, Object& object);
 
-void process_mouse_button(Event::MouseButtonEvent& data, vector<Object>& objects, Object& object);
+inline void process_mouse_button(Event::MouseButtonEvent& data, vector<Object>& objects, Object& object);
 
-string get_mode(Mode& mode);
+inline string get_mode(Mode& mode);
 
 
 int main() {
@@ -83,7 +83,7 @@ int main() {
     Mode mode = DIRECTION;
 
     vector<Object> objects;
-    Object object{ .speed_x = 1.1, .speed_y = 0, .direction = 0, .mass = 100, .s = CircleShape(10, 100), .d = RectangleShape(Vector2f(25, 3))};
+    Object object{ .speed_x = 1.1, .speed_y = 0, .direction = 0, .mass = 100, .s = CircleShape(5, 100), .d = RectangleShape(Vector2f(25, 3))};
     object.d.setPosition(object.s.getPosition().x + 10, object.s.getPosition().y + 10);
 
     ContextSettings settings(0, 0, 16, 4, 6, ContextSettings::Attribute::Default, true);
@@ -243,7 +243,7 @@ void process_mouse_wheel(Event::MouseWheelScrollEvent& data, Mode mode, Object& 
 }
 
 
-void process_mouse_move(Event::MouseMoveEvent& data, Object& object) {
+inline void process_mouse_move(Event::MouseMoveEvent& data, Object& object) {
     float r = object.s.getRadius();
     i32 x = data.x;
     i32 y = data.y;
@@ -252,12 +252,12 @@ void process_mouse_move(Event::MouseMoveEvent& data, Object& object) {
 }
 
 
-void process_mouse_button(Event::MouseButtonEvent& data, vector<Object>& objects, Object& object) {
+inline void process_mouse_button(Event::MouseButtonEvent& data, vector<Object>& objects, Object& object) {
     objects.push_back(object);
 }
 
 
-string get_mode(Mode& mode) {
+inline string get_mode(Mode& mode) {
     switch (mode) {
     case SPEED:
         return "SPEED";
