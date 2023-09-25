@@ -59,10 +59,16 @@ struct Object {
     float get_direction() {
         return atan2(speed_y, speed_x) * 180 / PI;
     }
+
+    Vector2f get_pos() {
+        return Vector2f(s.getPosition().x + s.getRadius(), s.getPosition().y + s.getRadius());
+    }
 };
 
 
 void process_movement(vector<Object>& objects);
+
+void prrocess_collision(Object& object1, Object& object2);
 
 bool process_keys(Event::KeyEvent& key, vector<Object>& objects, Mode& mode);
 
@@ -84,7 +90,7 @@ int main() {
 
     vector<Object> objects;
     Object object{ .speed_x = 1.1, .speed_y = 0, .direction = 0, .mass = 100, .s = CircleShape(5, 100), .d = RectangleShape(Vector2f(25, 3))};
-    object.d.setPosition(object.s.getPosition().x + 10, object.s.getPosition().y + 10);
+    object.d.setPosition(object.get_pos().x + 10, object.get_pos().y + 10);
 
     ContextSettings settings(0, 0, 16, 4, 6, ContextSettings::Attribute::Default, true);
     RenderWindow window(VideoMode(width, heigh), "Gravity model", sf::Style::Default, settings);
@@ -165,17 +171,19 @@ void process_movement(vector<Object>& objects) {
 
     for (u64 i = 0; i + 1 < size; ++i) {
         for (u64 j = i + 1; j < size; ++j) {
-            float r2 = pow(objects[i].s.getPosition().x - objects[j].s.getPosition().x, 2) + pow(objects[i].s.getPosition().y - objects[j].s.getPosition().y, 2);
+            float r2 = pow(objects[i].get_pos().x - objects[j].get_pos().x, 2) + pow(objects[i].get_pos().y - objects[j].get_pos().y, 2);
             float r = sqrt(r2);
 
-            float cos = (objects[i].s.getPosition().x - objects[j].s.getPosition().x) / r;
-            float sin = (objects[i].s.getPosition().y - objects[j].s.getPosition().y) / r;
+            float cos = (objects[i].get_pos().x - objects[j].get_pos().x) / r;
+            float sin = (objects[i].get_pos().y - objects[j].get_pos().y) / r;
 
             objects[i].speed_x += objects[j].mass * -cos / r2 / 2;
             objects[j].speed_x += objects[i].mass * cos / r2 / 2;
 
             objects[i].speed_y += objects[j].mass * -sin / r2 / 2;
             objects[j].speed_y += objects[i].mass * sin / r2 / 2;
+
+            prrocess_collision(objects[i], objects[j]);
         }
     }
 
@@ -185,6 +193,32 @@ void process_movement(vector<Object>& objects) {
         object.s.move(speed);
         object.d.move(speed);
         object.d.setRotation(object.direction);
+    }
+}
+
+
+void prrocess_collision(Object& object1, Object& object2) {
+    if (sqrt(pow(object1.get_pos().x - object2.get_pos().x, 2) + pow(object1.get_pos().y - object2.get_pos().y, 2)) <= object1.s.getRadius() + object2.s.getRadius()) {
+        float old_speed_x_1 = object1.speed_x;
+        float old_speed_x_2 = object2.speed_x;
+        float old_speed_y_1 = object1.speed_y;
+        float old_speed_y_2 = object2.speed_y;
+        
+        object1.speed_x = ((object1.mass - object2.mass) * old_speed_x_1 + 2 * object2.mass * old_speed_x_2) / (object1.mass + object2.mass);
+        object2.speed_x = ((object2.mass - object1.mass) * old_speed_x_2 + 2 * object1.mass * old_speed_x_1) / (object1.mass + object2.mass);
+
+        object1.speed_y = ((object1.mass - object2.mass) * old_speed_y_1 + 2 * object2.mass * old_speed_y_2) / (object1.mass + object2.mass);
+        object2.speed_y = ((object2.mass - object1.mass) * old_speed_y_2 + 2 * object1.mass * old_speed_y_1) / (object1.mass + object2.mass);
+        /*
+        if (old_speed_x_1 + old_speed_x_2 > old_speed_y_1 + old_speed_y_2) {
+            object1.speed_y = old_speed_y_2 * object2.mass / object1.mass;
+            object2.speed_y = old_speed_y_1 * object1.mass / object2.mass;
+        }
+        else {
+            object1.speed_x = old_speed_x_2 * object2.mass / object1.mass;
+            object2.speed_x = old_speed_x_1 * object1.mass / object2.mass;
+        }
+        */
     }
 }
 
